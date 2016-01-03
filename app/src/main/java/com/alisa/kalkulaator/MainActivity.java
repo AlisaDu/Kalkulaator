@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void broadcastIntent(View view){
 
-        if ( operation != "") {
+        if ( !operation.equals("")) {
             Intent intent = new Intent();
             intent.setAction("com.alisa.sendCalcRequest");
             intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
