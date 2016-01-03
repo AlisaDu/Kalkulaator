@@ -1,6 +1,8 @@
 package com.alisa.kalkulaator;
-
-
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -9,26 +11,17 @@ import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 
-
-
-
 public class MainActivity extends AppCompatActivity {
 
-    //screen
+    //result screen
     private EditText screen;
-
-    //  operation buttons
-    private Button btnSum;
-    private Button btnSub;
-    private Button btnMlt;
-    private Button btnDiv;
     private Button btnEq;
-
     double value = 0;
     String operation = "";
     boolean operationPressed = false;
-    private Animation animation;
-    private boolean picFlag = false;
+    private Animation animation; // button animation
+    private boolean picFlag = false; //controls appearance of screen
+    private boolean animFlag = true; // controls the animation of Eq button, when pressed by hand or programmatically
 
 
     @Override
@@ -36,9 +29,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         screen = (EditText) findViewById(R.id.txtResult);
-
         animation = AnimationUtils.loadAnimation(this, R.anim.button_anim);
-
 
         if (savedInstanceState != null){
             value =savedInstanceState.getDouble("value");
@@ -47,16 +38,11 @@ public class MainActivity extends AppCompatActivity {
             picFlag = savedInstanceState.getBoolean("screenState");
             screen.setSelected(picFlag);
         }
+
+
+
         screen.setText(R.string.dflt);
-        btnSum = (Button) findViewById(R.id.buttonSum);
-        btnSub = (Button) findViewById(R.id.buttonSub);
-        btnMlt = (Button) findViewById(R.id.buttonMlt);
-        btnDiv = (Button) findViewById(R.id.buttonDiv);
         btnEq = (Button) findViewById(R.id.buttonEq);
-
-
-
-
     }
 
     @Override
@@ -66,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         savedInstanceState.putString("operation", operation);
         savedInstanceState.putBoolean("pressed", operationPressed);
         savedInstanceState.putBoolean ("screenState", picFlag);
-
     }
 
     public void buttonClick (View view) {
@@ -82,19 +67,19 @@ public class MainActivity extends AppCompatActivity {
                 Button b = (Button)view;
 
                 if (value != 0){
+                    animFlag =false;
+
                     btnEq.performClick();
                     operationPressed = true;
                     operation = b.getText().toString();
+
                 } else {
                     operationPressed = true;
                     operation = b.getText().toString();
                     value = getDouble(screen.getText());
                 }
-
-
                 break;
             }
-
 
             case R.id.buttonC:{
                 screen.setSelected(false);
@@ -105,60 +90,42 @@ public class MainActivity extends AppCompatActivity {
                 operation = "";
                 operationPressed = false;
 
-
                 break;
             }
 
             case R.id.buttonEq:{
-                view.startAnimation(animation);
-                switch (operation){
-
-                    case "+":{
-                        screen.setText (String.valueOf(value + getDouble (screen.getText())));
-                        break;
-                    }
-                    case "-":{
-                        screen.setText (String.valueOf(value - getDouble (screen.getText())));
-                        break;
-                    }
-                    case "*":{
-                        screen.setText (String.valueOf(value * getDouble (screen.getText())));
-                        break;
-                    }
-                    case "/":{
-                        screen.setText (String.valueOf(value / getDouble (screen.getText())));
-                        break;
-                    }
-                    default:
-                        break;
-                }// end eq switch
-                value = getDouble(screen.getText());
-                operation = "";
-                operationPressed = true;
 
 
 
+                if (animFlag == true) {
+                    view.startAnimation(animation);
+                    broadcastIntent(view);
+                }
+                    animFlag = true;
+                    broadcastIntent(view);
+
+
+
+
+                    operationPressed = true;
                 break;
             }
 
             // all numeric buttons
             default:{
                 view.startAnimation(animation);
-
                 Button b = (Button)view;
 
-                // in case of new input, start from scratch
+                // in case of new input, clear screen
                 if ((String.valueOf(screen.getText()).equals(getResources().getString(R.string.dflt))) ||(String.valueOf(screen.getText()).equals(getResources().getString(R.string.zero)))|| (operationPressed == true)) {
                     operationPressed = false;
                     screen.setText("");
                 }
+                // else concatenate to existing
                 screen.setText(screen.getText() + (b.getText()).toString());
-
-
             }
         }// end button switch
     }
-
 
 
     private double getDouble(Object screenInput) {
@@ -171,9 +138,27 @@ public class MainActivity extends AppCompatActivity {
             result = 0;
         }
         return result;
-
-
     }
 
 
+
+
+    public void broadcastIntent(View view)
+    {
+        Intent intent = new Intent();
+        intent.setAction("com.alisa.sendCalcRequest");
+        intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        intent.putExtra("firstOp", value);
+        intent.putExtra("secondOp", getDouble(screen.getText()));
+        intent.putExtra("operation", operation);
+        sendOrderedBroadcast(intent, null, new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String feedback = getResultData();
+                screen.setText(feedback);
+                value = getDouble(feedback);
+
+            }
+        }, null, Activity.RESULT_OK, null, null);
+    }
 }
