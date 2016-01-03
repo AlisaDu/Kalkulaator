@@ -51,12 +51,12 @@ public class MainActivity extends AppCompatActivity {
         savedInstanceState.putDouble("value", value);
         savedInstanceState.putString("operation", operation);
         savedInstanceState.putBoolean("pressed", operationPressed);
-        savedInstanceState.putBoolean ("screenState", picFlag);
+        savedInstanceState.putBoolean("screenState", picFlag);
     }
 
-    public void buttonClick (View view) {
-        screen.setSelected(true);
-        picFlag = true;
+   public void buttonClick (View view) {
+       screen.setSelected(true);
+       picFlag = true;
         switch (view.getId()){
             // any math operation button
             case R.id.buttonSum:
@@ -70,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
                     animFlag =false;
 
                     btnEq.performClick();
-                    operationPressed = true;
                     operation = b.getText().toString();
 
                 } else {
@@ -97,17 +96,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-                if (animFlag == true) {
+                if (animFlag) {
                     view.startAnimation(animation);
                     broadcastIntent(view);
                 }
                     animFlag = true;
                     broadcastIntent(view);
-
-
-
-
                     operationPressed = true;
+                    operation = "";
                 break;
             }
 
@@ -117,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
                 Button b = (Button)view;
 
                 // in case of new input, clear screen
-                if ((String.valueOf(screen.getText()).equals(getResources().getString(R.string.dflt))) ||(String.valueOf(screen.getText()).equals(getResources().getString(R.string.zero)))|| (operationPressed == true)) {
+                if ((String.valueOf(screen.getText()).equals(getResources().getString(R.string.dflt))) ||(String.valueOf(screen.getText()).equals(getResources().getString(R.string.zero)))|| (operationPressed)) {
                     operationPressed = false;
                     screen.setText("");
                 }
@@ -143,22 +139,24 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public void broadcastIntent(View view)
-    {
-        Intent intent = new Intent();
-        intent.setAction("com.alisa.sendCalcRequest");
-        intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-        intent.putExtra("firstOp", value);
-        intent.putExtra("secondOp", getDouble(screen.getText()));
-        intent.putExtra("operation", operation);
-        sendOrderedBroadcast(intent, null, new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String feedback = getResultData();
-                screen.setText(feedback);
-                value = getDouble(feedback);
+    public void broadcastIntent(View view){
 
-            }
-        }, null, Activity.RESULT_OK, null, null);
+        if ( operation != "") {
+            Intent intent = new Intent();
+            intent.setAction("com.alisa.sendCalcRequest");
+            intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+            intent.putExtra("firstOp", value);
+            intent.putExtra("secondOp", getDouble(screen.getText()));
+            intent.putExtra("operation", operation);
+            sendOrderedBroadcast(intent, null, new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String feedback = getResultData();
+                    screen.setText(feedback);
+                    value = getDouble(feedback);
+
+                }
+            }, null, Activity.RESULT_OK, null, null);
+        }
     }
 }
